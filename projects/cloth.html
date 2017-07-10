@@ -1,0 +1,227 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta name="keywords" content=" ">
+  <meta name="description" content="Amin Ghafari Website">
+  <title>Cloth Simulation</title>
+</head>
+<body>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="20" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top; text-align: center; width: 25%; background-color: rgb(255, 127, 80);">
+      <br>
+
+	<big style="font-weight: bold;">Amin Ghafari</big></a><br>
+
+
+	<table style="text-align: left; width:100%" border="0" cellpadding="5" cellspacing="0">
+	  <tbody>
+	    <td style="center-align: top; text-align: right; width:60%">
+	      <img src="profile.jpg" style="width:200px" hspace="20">
+  <br><br>
+	      
+	    </td>		
+	    <td style="center-align: top; text-align: left; width:40%">
+	<u>Contact details:</u><br>
+	Computer Mechanics Laboratory<br>
+	Etcehverry Hall<br>
+	UC Berkeley, 94720 CA<br>  
+	Email: amin.ghafari[at]berkeley[dot]edu
+	<li><a href=https://github.com/aminghafari>GitHub: Amin Ghafari</a></li>
+	<li><a href=https://www.linkedin.com/in/amin-ghafari-82808060/>Linkedin: Amin Ghafari</a></li>
+	    </td>
+	  </tbody>
+	  </table>
+     </td>
+     <td style="vertical-align: middle; text-align: center; width: 75%; background-color: rgb(255, 127, 80); ">
+      <img src="camp.jpg" align="middle" width=100%></h1>
+     </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; text-align: left; width: 25%;">
+
+	<li><a href=../index.html>Return to home page</a></li>
+
+       </td>
+<td>
+
+<h1 align="middle">Cloth Simulator</h1>
+<h2 align="middle">Amin Ghafari Zeydabadi CS 284A, UC Berkeley</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>
+In this project we have simulated a clothe by assuming that it is a system of masses and springs. Where each mass is connected to its vertical and horizontal components through a spring and this connection is called Structural type of connection. These masses are also connected to thier diagonal neighbors by spring and these connections are called Shearing. The next connection is with the second vertical and horizontal neighbors which is called Bending connection. In the first part of the project we have positioned all the masses in their position based on the input of the cloth that is vertical or horizontal, and constructed a vector of mass points. Then, we implemented the connection between masses through  construction of a vector of springs and specifying the type of connection and which point masses are connected through each connection.
+</p>
+<p>
+In the second part, We have computed the force applied on each point mass through the spring and gravity and updated the new position of each point mass based on its acceleration using Verlet integration method. We also check if in each time step the extension of the spring is more than 10% of lenght of the previous time step.
+</p>
+<p>
+In the third part, we prevent the cloth to pass through walls and sphere by using these primitives’ properties and detecting the collision between these object; thus, the resultant interaction between the clothes and the wall or sphere is close to reality. In th forth part, we implemented a method to detect collision between point masses of the clothes by itself. First based on the position of the point we hashed them to specific groups and checked for the distance between mass points. If the distance between them is less than some value then we move them in the same direction to avoid collision. To have unique float number for each nox in the hash map we first generated an integer number for each point mass using it coordinates. Then, we used this point and pairing function to generate a unique integer corresponding to one pair of numbers. We first converted all positive and negative values of the coordinates to postive values and using the paring function twice we were able to hash a unique float number for every hash box in the coordinates. <a href="https://en.wikipedia.org/wiki/Pairing_function">https://en.wikipedia.org/wiki/Pairing_function</a>
+</p>
+
+
+
+<h2 align="middle">Part I: Masses and springs</h2>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/1_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">No Shearing constraint</figcaption>
+      </td>
+      <td>
+        <img src="images/1_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">Just Shearing constraint</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/1_3.png" align="middle" width="400px"/>
+        <figcaption align="middle">All constraints</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<h2 align="middle">Part II: Simulation via numerical integration</h2>
+<p>Ks:</p>
+<p>
+For the small ks the connection between mass spring is not strong and it behaves like a thin cloth or scarf that easily and fast drops when it is pinned at some points. In this case the cloth can bended easily and it has more flexibility.. For the large ks the connection between point is stronger and they are more connected to each other so the process of falling of the cloth feels like it is a thick cloth and it cannot be bended easily and it is not as flexible as a cloth should be. In fact it looks more like a foil of a metal.
+</p>
+<p>Density:</p>
+<p>
+For large densities the mass of the cloth will be large and because of that the spring get stretched more and when the cloth is pinned if seems that it is stretched more and it is bended in more locations. While for small masses this is not the case and the stretch between the points is less obvious in the cloth.
+</p>
+<p>Damping:</p>
+<p>
+Large damping causes the system easily lose it energy and there are less ripples in the clothes as it falls. It also prevents the cloth from falling fast because the energy inserted to the system is damped easily and the gravity helps the cloth to fall gradually. While for small dampings we see that the cloth falls very fast and it start swinging around its final equilibrium position since the damping is small and it takse more time for the system to lose its energy.</p>
+<div align="center">
+  <table style="width=100%">
+        <img src="images/2_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Default Settigns, rest position for pinned4.json</figcaption>
+  </table>
+</div>
+<h2 align="middle">Part III: Handling collisions with other objects</h2>
+<p>
+As we talked about ks, for large ks it is harder for the cloth to be bended and this obvious from the pictures below. For the smallest ks = 500, we can see that the cloth bend easily and it form the shape of the sphere easily. For large the large ks it is not easy to bend the cloth and the cloth does not form the shape of the sphere completely.
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/3_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">ks = 5000</figcaption>
+      </td>
+      <td>
+        <img src="images/3_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">ks = 500</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/3_3.png" align="middle" width="400px"/>
+        <figcaption align="middle">ks = 50000</figcaption>
+      </td>
+      <td>
+        <img src="images/3_4.png" align="middle" width="400px"/>
+        <figcaption align="middle">Cloth colliton with a plane</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<h2 align="middle">Part IV: Handling self-collisions</h2>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/4_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">1</figcaption>
+      </td>
+      <td>
+        <img src="images/4_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">2</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/4_3.png" align="middle" width="400px"/>
+        <figcaption align="middle">3</figcaption>
+      </td>
+      <td>
+        <img src="images/4_4.png" align="middle" width="400px"/>
+        <figcaption align="middle">4</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>
+Large density: when density is large, it is as the ks is small. Thus, the cloth can easily bend over itself and stick to the floor as a thin cloth while for a cloth with small density the condition is reverse and the cloth is not going to bend easily.
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/4_5.png" align="middle" width="400px"/>
+        <figcaption align="middle">1</figcaption>
+      </td>
+      <td>
+        <img src="images/4_6.png" align="middle" width="400px"/>
+        <figcaption align="middle">2</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/4_7.png" align="middle" width="400px"/>
+        <figcaption align="middle">3</figcaption>
+      </td>
+      <td>
+        <img src="images/4_8.png" align="middle" width="400px"/>
+        <figcaption align="middle">4</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>
+Large ks: for the large ks, bending is not as easy as before and even the cloth is on the floor it is like a foil of metal lying on surface.
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/4_9.png" align="middle" width="400px"/>
+        <figcaption align="middle">1</figcaption>
+      </td>
+      <td>
+        <img src="images/4_10.png" align="middle" width="400px"/>
+        <figcaption align="middle">2</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/4_11.png" align="middle" width="400px"/>
+        <figcaption align="middle">3</figcaption>
+      </td>
+      <td>
+        <img src="images/4_12.png" align="middle" width="400px"/>
+        <figcaption align="middle">4</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+</td>
+
+</tr>
+  </tbody>
+</table>
+<br>
+
+</body>
+</html>

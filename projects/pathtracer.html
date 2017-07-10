@@ -1,0 +1,598 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta name="keywords" content=" ">
+  <meta name="description" content="Amin Ghafari Website">
+  <title>Amin Ghafari, path tracer</title>
+</head>
+<body>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="20" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top; text-align: center; width: 25%; background-color: rgb(255, 127, 80);">
+      <br>
+
+	<big style="font-weight: bold;">Amin Ghafari</big></a><br>
+
+
+	<table style="text-align: left; width:100%" border="0" cellpadding="5" cellspacing="0">
+	  <tbody>
+	    <td style="center-align: top; text-align: right; width:60%">
+	      <img src="profile.jpg" style="width:200px" hspace="20">
+  <br><br>
+	      
+	    </td>		
+	    <td style="center-align: top; text-align: left; width:40%">
+	<u>Contact details:</u><br>
+	Computer Mechanics Laboratory<br>
+	Etcehverry Hall<br>
+	UC Berkeley, 94720 CA<br>  
+	Email: amin.ghafari[at]berkeley[dot]edu
+	<li><a href=https://github.com/aminghafari>GitHub: Amin Ghafari</a></li>
+	<li><a href=https://www.linkedin.com/in/amin-ghafari-82808060/>Linkedin: Amin Ghafari</a></li>
+	    </td>
+	  </tbody>
+	  </table>
+     </td>
+     <td style="vertical-align: middle; text-align: center; width: 75%; background-color: rgb(255, 127, 80); ">
+      <img src="camp.jpg" align="middle" width=100%></h1>
+     </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; text-align: left; width: 25%;">
+
+	<li><a href=../index.html>Return to home page</a></li>
+
+       </td>
+<td>
+
+<h1 align="middle">PathTracer</h1>
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/1_100.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.5, lens radius=0</figcaption>
+      </td>
+      <td>
+        <img src="images/2_1_4.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.5,  lens radius=0.03</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/3_3_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.5,  lens radius=0.044</figcaption>
+      </td>
+      <td>
+        <img src="images/4_2_4.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.5,  lens radius=0.06</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+    <h2 align="middle">Amin Ghafari Zeydabadi CS 284A, UC Berkeley</h2>
+
+    <div class="padded">
+<p>
+In this project we have implemented the important functions which are necessary for a ray tracing method. This includes generating a number of rays inside a [0,1]*[0,1] box for each pixel and projecting them to the camera view in our scene which is in the world coordinates. Then, this rays should be followed in the scene to check for intersection. In part 1 of the prjection we check the intersection between each ray genrated and all the mesh triangle in the scene for intersection which is time consuming and return the closest intersection as a spectrum which include the color of the pixel. This should be done for all sample rays for a pixel and the averaged value over all sample rays is the final spectrum passed to a pixel to be shown. In part 2 we try to improve method using bounding box trees; it is done by dividing all the primitives(triangles, circles, ...) to sub bodnding boxes of a tree structure and testing each sample to see if there is an intersetion between a bounding box and the ray. This helps to efficiently find the primitives that a ray is actually intersecting with and we will be able to efficiently do the ray tracing for more complicated shapes.
+To be able to show the results for the first two part we used normal vector of each primitive at the point to get a spectrum for the poing and use this spectrum as the colore of the pixel to show.
+</p>
+<p>
+In part 3 we focus on direct ilumination for diffuse BSDF materials. When a rays hits a primitive in the scene we sample some outgoing rays to intersect with the enviroment using Monte Carlo integration and collect the incoming light to the hit point and using the BSDF properties of the hit point we return a spectrum for the color of the hit point and it passes to the pixel. Part 4 is there to take care of indirect lighting. When a ray hit point and we use incoming radiances from other points to get color at a point, this incoming rays can by themselve come from a another points and we can do direct lighinng for these sets of points and then use them for the first hit point. This can goes on and on recursively. Thus, we use a termination method to get the last set of rays and turn them back until we get to the firs het point in the scene and use the combined color to be shown on the scene. Part 5 is devoted to find the averaged spectrum of the incoming sample rays to a pixel and use statistics to conclude if the color of the specified pixel is convereged to right value or not and if this is the case it will prevent the system from sending extra rays for a specific pixel to do the ray tracing and this way we can get a more efficient code.
+</p>
+<h2 align="middle">Part 1: Ray Generation and Intersection</h2>
+<p>
+For this part we generate a number of points randomly in a rectangular domain of [0,1]^2 to hit the specified pixel, this is using a defined gridsampler function. Then, these points are converted to camera view to generate rays using the vertical and horizontal field of view, which are angle of vies in camera, from the coordinate on the pixel to the camera coodinate. Then we convert this point to world corrdinate by construcing a Vector3D for point on the camera. Afterward, we generate a ray using this direction that we determined in world coordinates and the positon that we have the field of view or eye. We should also fix the limits of the this ray which depend on the camera position in the world.
+</p>
+<p>Now that the ray is generated we should find how this ray is intersecting with a primitive. The most common one is triangle primitives that we discuss it here to how find the solution.
+</p>
+<p>
+To find the intersection between a ray and a triangle we use a barycenteric representation for points inside the triangle using three vertices.
+</p>
+<p align="middle"><pre align="middle">P = b1*p1+b2*p2+b3*p3</pre></p>
+<p>
+Where p1, p2 and p3 are triangle points and b1,b2 and b3(b1+b2+b3=1) are barycenteric coordinates. And another representation for the ray
+</p>
+<p align="middle"><pre align="middle">P = o + t*d</pre></p>
+<p>
+where o is the orgin of the ray and d is the direction and t is constant limit by camera view. These two points intersct at one specific point os they sould be eqaul. Solving for b1, b2 and t(b3 is a function b1 and b2) we can find these values.
+</p>
+<p align="middle"><pre align="middle">o+t*d = b1*p1+b2*p2+(1-b1-b2)*p3</pre></p>
+<p>
+or 
+</p>
+<p align="middle"><pre align="middle">-t*d+b1*(p1-p3)+b2*(p2-p3) = o-p3</pre></p>
+<p>
+Since these are 3D vectors then there are 3 equation for three unknown t, b1 and b2. lets call S = o-p3, e1 = p1-p3, e2 = p2-p3. 
+</p>
+<p align="middle"><pre align="middle">-t*d+b1*e1+b2*e2 = s, [-d,e1,e2]*[t,b1,b2]^T= s</pre></p>
+<p>
+We know that the solution for this system of equation based on cramer ruls is:
+</p>
+<p align="middle"><pre align="middle">t = det[s,e1,e2]/det[-d,e1,e2], b1 = det[-d,s,e2]/det[-d,e1,e2], b2 = det[-d,e1,s]/det[-d,e1,e2]</pre></p>
+<p>
+or
+</p>
+<p align="middle"><pre align="middle">t = cross(s,e1).e2/cross(d,e2).e1, b1 = cross(d,e2).s/cross(d,e2).e1, b2 = cross(s,e1).d/cross(d,e2).e1</pre></p>
+<p>
+If we replace:
+</p>
+<p align="middle"><pre align="middle">cross(s,e1) = s2, cross(d,e2) = s1</pre></p>
+<p>
+then we have,
+</p>
+<p align="middle"><pre align="middle"> t = s2.e2/s1.e1, b1 = s1.s/s1.e1, b2 = s2.d/s1.e1</pre></p>
+<p>
+and this is how we set obtain the unknowns in the code. Then we determine if the intersection is valid using the bouding of the variable t and if b1, b2 and b3 are positive. If that is the case; then, we set the properties of an Intersection object such as which primitive is included in the interstion, what is the normal at that point, and in what t the interstion is happend, and we set maximum value for t to be equal to the new value that we detemined.
+</p>
+<p>
+For a sphere we also follow the same roles suggested in the class on how to determine the number of intersection and choose which on is the closest based on the distance and finally set the interstion object properties accoringly.
+</p>
+<p>
+Below we can see some simple examples of the normal shading.
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-5_18-34-30.png" align="middle" width="400px"/>
+        <figcaption align="middle">Simple normal shading: CBspheres_lambertian</figcaption>
+      </td>
+      <td>
+        <img src="images/CBgems_screenshot_3-5_18-34-50.png" align="middle" width="400px"/>
+        <figcaption align="middle">Simple normal shading: CBgems</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/CBgems_screenshot_3-5_18-35-13.png" align="middle" width="400px"/>
+        <figcaption align="middle">Simple normal shading: CBgems</figcaption>
+      </td>
+      <td>
+        <img src="images/CBgems_screenshot_3-5_18-35-26.png" align="middle" width="400px"/>
+        <figcaption align="middle">Simple normal shading: CBgems</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
+<p>
+BVH construction algorithm: to organize all primitives inside a tree structure of bounding box we use a recursive method to start from a large bounding box that incloses all the primitives in the scene, this boundig box has two left and right childs and a vector of primitives. Then, we want to split the box in a way that around half of the primitives are stored in the right child bounding box and half of them in the left child bounding box. We do this for childs also to finally get the number of primitives in the bounding box to be less than the determined size. In order to be able to split the large bounding boxes we define another bounding box called centriod_box to store the center of all the bounding box of the primitives in it. In this way when we want to split the prvimitive we use the center of this centriod_box and it guarantees that we have primitives in left and right childs and there is no problem regarding having an infinte loop due to and empty child for the bounding box.
+</p>
+<p>
+Then we implement the algorithm for ray intersecting a bounding box to be used in the accelerated BVH alogrithm. This is a simple a way to check if a ray intersect with a box or not; which helps to avoid extra intersections for all primitives inside the box.
+</p>
+<p>
+BVH intersection algorithm: In this algorithm we first check to see if the incoming ray intersect with the given bounding box. If it does not we return false since there is no intersection otherwise we check if there is any primitive inside the bounding box. If there is any we check for intersection with primitives and we return true if there is one other wise we should repeat the intersection check for both the left and right child inside the bounding box and we call the same intersection function inside these functions so it is recursive method.
+</p>
+<p>
+Below we have shown the results for two cases of comlicated shapes for rendering. 
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/maxplanck_screenshot_3-5_22-44-53.png" align="middle" width="400px"/>
+        <figcaption align="middle">More complicated normal shading: maxplanck</figcaption>
+      </td>
+      <td>
+        <img src="images/CBlucy_screenshot_3-5_22-47-22.png" align="middle" width="400px"/>
+        <figcaption align="middle">More complicated normal shading: CBlucy</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<h2 align="middle">Part 3: Direct Illumination</h2>
+<p>
+First of all we set the reflectance and probability densidy function for a diffuse BSDF material inside the related function.
+</p>
+<p>
+Here we have a function to take care of direct lighting. In this function we pass the hit point and the ray that comes from the camera. Then we define these variables in world and object component. Now to pass a spectrum to pixel that ray is coming from we should send out a number of ray from the hit point to the scene light. For this purpose we loop over all the scene lights and find out if it is a delta light or not. If it is not a delta light we need one sample light from it because it is just a oint light otherwise we need to get a number of sample from it since the lighe is covering an area in the scene. After having the sample light we have the inforamtion regarding the distance between hit point and the light and the incoming light direction. Thus we can check for the incoming  radiang to get the correct spetrum after taking care of cosine terms and probability density function. After collecting all of these sample spectrum we get the average spcetrum and combined it with diffuse BSDF properties of the hit point we return the final value of the direct lighing for the pixel.
+</p>
+<p>
+Below there are a number of images with direc illuminatioin:
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/dragon_screenshot_3-5_23-34-42.png" align="middle" width="400px"/>
+        <figcaption align="middle">Direct lighting: dragon</figcaption>
+      </td>
+      <td>
+        <img src="images/CBbunny_screenshot_3-5_23-39-26.png" align="middle" width="400px"/>
+        <figcaption align="middle">Direct lighting: CBbunny</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>
+Below there are a number of images with direct illuminatioin with 1, 4, 16, and 64 light rays:
+</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/CBbunny_screenshot_3-5_23-47-52.png" align="middle" width="400px"/>
+        <figcaption align="middle">1 light ray, -s 1</figcaption>
+      </td>
+      <td>
+        <img src="images/CBbunny_screenshot_3-5_23-48-45.png" align="middle" width="400px"/>
+        <figcaption align="middle">4 light rays, -s 1</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/CBbunny_screenshot_3-5_23-49-8.png" align="middle" width="400px"/>
+        <figcaption align="middle">16 light rays, -s 1</figcaption>
+      </td>
+      <td>
+        <img src="images/CBbunny_screenshot_3-5_23-49-35.png" align="middle" width="400px"/>
+        <figcaption align="middle">64 light rays, -s 1</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h2 align="middle">Part 4: Indirect Illumination</h2>
+<p>
+Here we continue what we have done for direct lighting in a recursive way. When a ray hits a primitive we first get direct lighting; then, in a function for indirect lighting we measure the illumination of the hit surfce and determine if the illumination is large enough to sample from the incoming radiance and add another spectrum to the system. If the illlumination passes a threshold; then, we get random incoming radiace and track it using calling trace_ray() function and compute the incoming radiance from this ray. The same ray may again go through this process to collect spectrum from other incoming radiances. These process goes on and on untill the ilumination of the hit point is negiligble. Afterward, the code sum up all the spectrums together and return the indirect lighting for the pixel.
+</p>
+<p>
+Below we can see two examples of direct and indirect illumination together,
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_1-12-55.png" align="middle" width="400px"/>
+        <figcaption align="middle">Direct and indirect illumination: -t 8 -s 1024 -l 1 -m 5</figcaption>
+      </td>
+      <td>
+        <img src="images/CBbunny_screenshot_3-6_1-32-23.png" align="middle" width="400px"/>
+        <figcaption align="middle">Direct and indirect illumination: -t 8 -s 1024 -l 1 -m 5</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>
+Below we can see a scene with only direct illumination and another one with only indirect illumination:
+</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_16-56-11.png" align="middle" width="400px"/>
+        <figcaption align="middle">Only direct illumination,-t 8, -s 1024, -l 4, -m 5</figcaption>
+      </td>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_19-6-50.png" align="middle" width="400px"/>
+        <figcaption align="middle">only indirect illumination, -t 8, -s 1024, -l 4, -m 5</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>
+Below we can see a scene with max_depth_ray 0,1,2,3,100:
+</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/P4_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 1024, -l 4, -m 0</figcaption>
+      </td>
+      <td>
+        <img src="images/P4_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 1024, -l 4, -m 1</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/P4_3.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 1024, -l 4, -m 2</figcaption>
+      </td>
+      <td>
+        <img src="images/P4_4.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 1024, -l 4, -m 3</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/P4_5.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 1024, -l 4, -m 100</figcaption>
+      </td>
+  </table>
+</div>
+<p>
+Below we can see a scene with sample-per pixel for 1,2,4,8,16,64,1024
+</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_14-21-42.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 1, -l 4, -m 5</figcaption>
+      </td>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_14-21-53.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 2, -l 4, -m 5</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_14-22-4.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 4, -l 4, -m 5</figcaption>
+      </td>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_14-22-22.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 8, -l 4, -m 5</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_14-22-47.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 16, -l 4, -m 5</figcaption>
+      </td>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_14-24-20.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 64, -l 4, -m 5</figcaption>
+      </td>
+    </tr>
+      <td>
+        <img src="images/CBspheres_lambertian_screenshot_3-6_14-14-11.png" align="middle" width="400px"/>
+        <figcaption align="middle">-t 8, -s 1024, -l 4, -m 5</figcaption>
+      </td>
+  </table>
+</div>
+<h2 align="middle">Part 5: Adaptive Sampling</h2>
+<p>
+To implement this part we define a set of variables for later use. s1 and s2 are used to store the summation of illumination of a each sample ray for a pixel and illumination square. Then, the mean(mu) and standard deviation(sigma) of the illumination of all the sample points is computed every 32 time. Afterward, it is needed to compute the variable I = 1.96*sigma/sqrt(n) and compare it with maxTolerance*mu. If the value is less than the tolerance we can terminate sampling for the pixel since the value of illumination is close to a specific value and its deviation is small enough to assume that the function converged.
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/CBbunny_screenshot_3-6_0-14-38.png" align="middle" width="400px"/>
+        <figcaption align="middle">Adaptive sampling: the scene,-t 8 -s 2048 -a 64 0.05 -l 1 -m 5</figcaption>
+      </td>
+      <td>
+        <img src="images/CBbunny_screenshot_3-6_0-14-38_rate.png" align="middle" width="400px"/>
+        <figcaption align="middle">Adaptive sampling: sampling rate, -t 8 -s 2048 -a 64 0.05 -l 1 -m 5</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+
+<h2 align="middle">Part 6: Mirror and Glass Materials</h2>
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/1_0.png" align="middle" width="400px"/>
+        <figcaption align="middle">ray_depth = 0,1 hit</figcaption>
+      </td>
+      <td>
+        <img src="images/1_1r.png" align="middle" width="400px"/>
+        <figcaption align="middle">ray_depth = 1, First reflection/refraction, reflection from glass</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/1_2r.png" align="middle" width="400px"/>
+        <figcaption align="middle">ray_depth = 2, Second reflection/refraction, glass material</figcaption>
+      </td>
+      <td>
+        <img src="images/1_3r.png" align="middle" width="400px"/>
+        <figcaption align="middle">ray_depth = 3, 3rd reflection/refraction, light below the glass sphere</figcaption>
+      </td>
+    </tr>
+<tr>
+      <td>
+        <img src="images/1_4.png" align="middle" width="400px"/>
+        <figcaption align="middle">ray_depth = 4, 4th reflection/refraction, light on the right wall</figcaption>
+      </td>
+      <td>
+        <img src="images/1_5.png" align="middle" width="400px"/>
+        <figcaption align="middle">ray_depth = 5, 5th reflection, light below the glass sphere</figcaption>
+      </td>
+    </tr>
+<tr>
+      <td>
+        <img src="images/1_100.png" align="middle" width="400px"/>
+        <figcaption align="middle">ray_depth = 100, less noise</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h2 align="middle">Part 7: Microfacet Material</h2>
+<p>
+For the dragon as it is shown below for smaller alphas we have a smoother surface. Alpha has been used to find the distribution of the normals at the hitting points. As alpha get larger this distibution gets expanded to wider range of normal which are different than from real normal to the surface. And as alpha gets smaller the corresponding sampled normals ar closer the real normal to the surface and the matreial looks more glossy.
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/2_1_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">alpha = 0.005</figcaption>
+      </td>
+      <td>
+        <img src="images/2_1_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">alpha = 0.05</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/2_1_3.png" align="middle" width="400px"/>
+        <figcaption align="middle">alpha = 0.25</figcaption>
+      </td>
+      <td>
+        <img src="images/2_1_4.png" align="middle" width="400px"/>
+        <figcaption align="middle">alpha = 0.5</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>
+To compare cosine hemisphere sampling and importance sampling. The reslut for importance sampling is birther and less noisy.
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/2_2_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">cosine hemisphere sampling</figcaption>
+      </td>
+      <td>
+        <img src="images/2_2_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">Importance sampling</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>
+Using lead as a material for rendering we get this:
+</p>
+
+<div align="center">
+        <img src="images/2_3_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Bunny with lead as material</figcaption>
+</div>
+
+<h2 align="middle">Part 8: Environment Light</h2>
+<p>
+The corresponding probability distribuition for doge.exr file is shown below.
+</p>
+<div align="center">
+        <img src="images/3_1_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Probability distributions</figcaption>
+</div>
+
+
+<p>
+Below we have shown the reulsts for  bunny_unlit.dae using uniform sampling and importance sampling, as we can see the case with importance sampling is less noisy.
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/3_2_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">bunny_unlit, unform sampling</figcaption>
+      </td>
+      <td>
+        <img src="images/3_2_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">bunny_unlit, importance sampling</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+Below we have shown the reulsts for  bunny_microfacet_cu_unlit.dae using uniform sampling and importance sampling, as we can see the case with importance sampling is less noisy.
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/3_3_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">bunny_microfacet_cu_unlit, uniform sampling</figcaption>
+      </td>
+      <td>
+        <img src="images/3_3_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">bunny_microfacet_cu_unlit, importance sampling</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h2 align="middle">Part 9: Depth of Field</h2>
+
+<p>
+Here we show a stack of 4 picture for CBdragon for different depth of field and same lens radius,
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/4_1_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.5,  lens radius=0.03</figcaption>
+      </td>
+      <td>
+        <img src="images/4_1_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.7,  lens radius=0.03</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/4_1_3.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.9,  lens radius=0.03</figcaption>
+      </td>
+      <td>
+        <img src="images/4_1_4.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 2.1,  lens radius=0.03</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>
+Here we show a stack of 4 picture for CBdragon for with visibly different aperture sizes and same depth of field,
+</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/4_2_1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.5, lens radius=0</figcaption>
+      </td>
+      <td>
+        <img src="images/4_2_2.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.5,  lens radius=0.03</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <img src="images/4_2_3.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.5,  lens radius=0.044</figcaption>
+      </td>
+      <td>
+        <img src="images/4_2_4.png" align="middle" width="400px"/>
+        <figcaption align="middle">Focal distance = 1.5,  lens radius=0.06</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+
+
+
+</td>
+
+
+
+
+</tr>
+  </tbody>
+</table>
+<br>
+
+</body>
+</html>
